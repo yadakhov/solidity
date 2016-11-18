@@ -422,7 +422,10 @@ bool ASTJsonConverter::visit(FunctionTypeName const& _node)
 	setJsonNode(_node, "FunctionTypeName", {
 		make_pair("payable", _node.isPayable()),
 		make_pair("visibility", visibility(_node.visibility())),
+		// FIXME: remove with next breaking release
 		make_pair(m_legacy ? "constant" : "isDeclaredConst", _node.isDeclaredConst()),
+		make_pair("view", _node.isView()),
+		make_pair("pure", _node.isPure()),
 		make_pair("parameterTypes", toJson(*_node.parameterTypeList())),
 		make_pair("returnParameterTypes", toJson(*_node.returnParameterTypeList())),
 		make_pair("typeDescriptions", typePointerToJson(_node.annotation().type))
