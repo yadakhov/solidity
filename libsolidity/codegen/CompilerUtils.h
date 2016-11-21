@@ -188,6 +188,12 @@ private:
 	/// Appends code that cleans higher-order bits for integer types.
 	void cleanHigherOrderBits(IntegerType const& _typeOnStack);
 
+	/// Helper function to shift top value on the stack to the left.
+	void leftShiftNumberOnStack(u256 _shiftFactor);
+
+	/// Helper function to shift top value on the stack to the right.
+	void rightShiftNumberOnStack(u256 _shiftFactor, bool _isSigned = false);
+
 	/// Prepares the given type for storing in memory by shifting it if necessary.
 	unsigned prepareMemoryStore(Type const& _type, bool _padToWords);
 	/// Loads type from memory assuming memory offset is on stack top.
