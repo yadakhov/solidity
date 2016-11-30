@@ -979,7 +979,7 @@ unsigned CompilerUtils::loadFromMemoryHelper(Type const& _type, bool _fromCallda
 	{
 		bool leftAligned = _type.category() == Type::Category::FixedBytes;
 		// add leading or trailing zeros by dividing/multiplying depending on alignment
-		u256 shiftFactor = u256(1) << ((32 - numBytes) * 8);
+		int shiftFactor = (32 - numBytes) * 8;
 		rightShiftNumberOnStack(shiftFactor, false);
 		if (leftAligned)
 			leftShiftNumberOnStack(shiftFactor);
@@ -1000,14 +1000,14 @@ void CompilerUtils::cleanHigherOrderBits(IntegerType const& _typeOnStack)
 		m_context << ((u256(1) << _typeOnStack.numBits()) - 1) << Instruction::AND;
 }
 
-void CompilerUtils::leftShiftNumberOnStack(u256 _shiftFactor)
+void CompilerUtils::leftShiftNumberOnStack(int _shiftFactor)
 {
-	m_context << _shiftFactor << Instruction::MUL;
+	m_context << (u256(1) << _shiftFactor) << Instruction::MUL;
 }
 
 void CompilerUtils::rightShiftNumberOnStack(u256 _shiftFactor, bool _isSigned)
 {
-	m_context << _shiftFactor << Instruction::SWAP1 << (_isSigned ? Instruction::SDIV : Instruction::DIV);
+	m_context << (u256(1) << _shiftFactor) << Instruction::SWAP1 << (_isSigned ? Instruction::SDIV : Instruction::DIV);
 }
 
 unsigned CompilerUtils::prepareMemoryStore(Type const& _type, bool _padToWords)
