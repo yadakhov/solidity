@@ -317,53 +317,65 @@ void CompilerUtils::memoryCopyPrecompile()
 	m_context << Instruction::POP << Instruction::POP << Instruction::POP;
 }
 
-void CompilerUtils::memoryCopy32()
+void CompilerUtils::memoryCopy(bool _copyFullWords)
 {
-	// Stack here: size target source
-
-	m_context.appendInlineAssembly(R"(
+	// Stack here: len dst src
+	string wordCopyCode = R"(
+		jumpi(skipwordcopy, eq(len, 0))
 		{
-		jumpi(end, eq(len, 0))
-		start:
-		mstore(dst, mload(src))
-		jumpi(end, iszero(gt(len, 32)))
-		dst := add(dst, 32)
-		src := add(src, 32)
-		len := sub(len, 32)
-		jump(start)
-		end:
+			let last := add(src, and(sub(len, 1), not(31)))
+			let delta := 32
+			jumpi(startwordcopy, or(gt(src, dst), lt(add(last, 31), dst)))
+			// We have to copy in reverse to avoid overwriting
+			delta := sub(0, delta)
+			dst := add(dst, sub(last, src))
+			{
+				let t := src
+				src := last
+				last := t
+			}
+			startwordcopy:
+			mstore(dst, mload(src))
+			jumpi(endwordcopy, eq(src, last))
+			dst := add(dst, delta)
+			src := add(src, delta)
+			jump(startwordcopy)
+			endwordcopy:
 		}
-	)",
-		{ "len", "dst", "src" }
-	);
-	m_context << Instruction::POP << Instruction::POP << Instruction::POP;
-}
+		skipwordcopy:
+	)";
 
-void CompilerUtils::memoryCopy()
-{
-	// Stack here: size target source
-
-	m_context.appendInlineAssembly(R"(
+	if (_copyFullWords)
+		m_context.appendInlineAssembly("{" + wordCopyCode + "}", { "len", "dst", "src" });
+	else
+		// pseudo-function-invocation
+		m_context.appendInlineAssembly(R"(
 		{
-		// copy 32 bytes at once
-		start32:
-		jumpi(end32, lt(len, 32))
-		mstore(dst, mload(src))
-		dst := add(dst, 32)
-		src := add(src, 32)
-		len := sub(len, 32)
-		jump(start32)
-		end32:
-
-		// copy the remainder (0 < len < 32)
-		let mask := sub(exp(256, sub(32, len)), 1)
-		let srcpart := and(mload(src), not(mask))
-		let dstpart := and(mload(dst), mask)
-		mstore(dst, or(srcpart, dstpart))
+			jumpi(copyRemainder, lt(lenPartial, 33))
+			{
+				// number of bytes copied as full words
+				let fullWordCopy := and(sub(lenPartial, 1), 31)
+				{
+					let len := fullWordCopy
+					let dst := dstPartial
+					let src := srcPartial
+		)" + wordCopyCode + R"(
+				}
+				dstPartial := add(dstPartial, fullWordCopy)
+				srcPartial := add(srcPartial, fullWordCopy)
+				lenPartial := sub(lenPartial, fullWordCopy)
+			}
+			copyRemainder:
+			{
+				// copy the remainder (0 <= lenPartial < 33)
+				let mask := sub(exp(256, sub(32, lenPartial)), 1)
+				let srcpart := and(mload(srcPartial), not(mask))
+				let dstpart := and(mload(dstPartial), mask)
+				mstore(dstPartial, or(srcpart, dstpart))
+			}
 		}
-	)",
-		{ "len", "dst", "src" }
-	);
+		)",
+		{ "lenPartial", "dstPartial", "srcPartial" });
 	m_context << Instruction::POP << Instruction::POP << Instruction::POP;
 }
 
