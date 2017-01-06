@@ -126,7 +126,7 @@ public:
 	explicit ComputeMethod(Params const& _params, u256 const& _value):
 		ConstantOptimisationMethod(_params, _value)
 	{
-		m_routine = findRepresentation(m_value);
+		m_routine = findRepresentation(m_value, 6);
 	}
 
 	virtual bigint gasNeeded() override { return gasNeeded(m_routine); }
@@ -137,7 +137,8 @@ public:
 
 protected:
 	/// Tries to recursively find a way to compute @a _value.
-	AssemblyItems findRepresentation(u256 const& _value);
+	/// @param _remainingDepth is the max depth in the recursion to keep looking
+	AssemblyItems findRepresentation(u256 const& _value, unsigned _remainingDepth);
 	bigint gasNeeded(AssemblyItems const& _routine);
 
 	AssemblyItems m_routine;
