@@ -1,5 +1,8 @@
 ### 0.4.12 (unreleased)
+
+Features:
  * AST: export all attributes to Json format
+ * Type checker: Warn when builtin symbols (e.g. ``keccak256``, ``msg``, etc.) are overridden.
 
 Bugfixes:
  * Unused variable warnings no longer issued for variables used inside inline assembly
