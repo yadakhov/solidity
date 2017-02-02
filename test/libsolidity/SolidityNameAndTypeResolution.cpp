@@ -5740,7 +5740,7 @@ BOOST_AUTO_TEST_CASE(shadowing_global_functions)
 			function keccak256() {}
 		}
 	)";
-	CHECK_WARNING(text, "Shadowing global function");
+	CHECK_WARNING(text, "Shadowing builtin symbol");
 }
 
 BOOST_AUTO_TEST_CASE(shadowing_global_variables)
@@ -5752,7 +5752,7 @@ BOOST_AUTO_TEST_CASE(shadowing_global_variables)
 			}
 		}
 	)";
-	CHECK_WARNING(text, "Shadowing global variable");
+	CHECK_WARNING(text, "Shadowing builtin symbol");
 }
 
 BOOST_AUTO_TEST_SUITE_END()
