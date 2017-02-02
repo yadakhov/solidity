@@ -67,6 +67,7 @@ private:
 	virtual bool visit(Return const& _return) override;
 	virtual bool visit(MemberAccess const& _memberAccess) override;
 	virtual bool visit(InlineAssembly const& _inlineAssembly) override;
+	virtual bool visit(VariableDeclaration const& _variable) override;
 
 	std::vector<Declaration const*> const& m_globals;
 
