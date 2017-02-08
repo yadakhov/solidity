@@ -5733,7 +5733,7 @@ BOOST_AUTO_TEST_CASE(no_unused_inline_asm)
 	CHECK_SUCCESS_NO_WARNINGS(text);
 }
 
-BOOST_AUTO_TEST_CASE(shadowing_global_functions)
+BOOST_AUTO_TEST_CASE(shadowing_builtins_with_functions)
 {
 	char const* text = R"(
 		contract C {
@@ -5743,7 +5743,7 @@ BOOST_AUTO_TEST_CASE(shadowing_global_functions)
 	CHECK_WARNING(text, "Shadowing builtin symbol");
 }
 
-BOOST_AUTO_TEST_CASE(shadowing_global_variables)
+BOOST_AUTO_TEST_CASE(shadowing_builtins_with_variables)
 {
 	char const* text = R"(
 		contract C {
@@ -5753,6 +5753,48 @@ BOOST_AUTO_TEST_CASE(shadowing_global_variables)
 		}
 	)";
 	CHECK_WARNING(text, "Shadowing builtin symbol");
+}
+
+BOOST_AUTO_TEST_CASE(shadowing_builtins_with_events)
+{
+	char const* text = R"(
+		contract C {
+			event keccak256();
+		}
+	)";
+	CHECK_WARNING(text, "Shadowing builtin symbol");
+}
+
+BOOST_AUTO_TEST_CASE(shadowing_builtins_with_imports)
+{
+	char const* text = R"(
+	        import * as msg from "B.sol";
+		contract C {
+		}
+	)";
+	CHECK_WARNING(text, "Shadowing builtin symbol");
+}
+
+BOOST_AUTO_TEST_CASE(shadowing_builtins_with_multiple_imports)
+{
+	char const* text = R"(
+		import {msg, block} from "B.sol";
+		contract C {
+		}
+	)";
+	CHECK_WARNING(text, "Shadowing builtin symbol");
+}
+
+BOOST_AUTO_TEST_CASE(shadowing_builtins_ignores_struct)
+{
+	char const* text = R"(
+		contract C {
+			struct a {
+				uint msg;
+			}
+		}
+	)";
+	CHECK_SUCCESS_NO_WARNINGS(text);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
