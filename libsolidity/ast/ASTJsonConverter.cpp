@@ -116,7 +116,27 @@ bool ASTJsonConverter::visit(PragmaDirective const& _node)
 
 bool ASTJsonConverter::visit(ImportDirective const& _node)
 {
-	addJsonNode(_node, "ImportDirective", { make_pair("file", _node.path())});
+	std::vector<pair<string const, Json::Value const>> attributes = {
+		make_pair("file", _node.path()),
+		make_pair("absolutePath", _node.annotation().absolutePath),
+		make_pair("SourceUnit", _node.annotation().sourceUnit->id())
+	};
+	if ( _node.name() != "")
+		attributes.push_back(make_pair("unitAlias", _node.name())); 
+	if (!_node.symbolAliases().empty()) 
+	{
+		Json::Value symbolAliases(Json::arrayValue);
+		for (auto const& symbolAlias: _node.symbolAliases())
+		{
+			Json::Value tuple(Json::objectValue);
+			solAssert(symbolAlias.first, "");
+			tuple["foreign"] = symbolAlias.first->id();
+			tuple["local"] =  symbolAlias.second ? Json::Value(*symbolAlias.second) : Json::nullValue;
+			symbolAliases.append(tuple);
+		}
+		attributes.push_back( make_pair("symbolAliases", symbolAliases));
+	} 
+	addJsonNode(_node, "ImportDirective", attributes);
 	return true;
 }
 
