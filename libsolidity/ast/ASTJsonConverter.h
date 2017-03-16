@@ -151,6 +151,12 @@ private:
 		std::initializer_list<std::pair<std::string const, Json::Value const>> _attributes,
 		bool _hasChildren
 	);
+	void addJsonNode(
+		ASTNode const& _node,
+		std::string const& _nodeName,
+		std::vector<std::pair<std::string const, Json::Value const>> const& _attributes,
+		bool _hasChildren
+	);
 	std::string sourceLocationToString(SourceLocation const& _location) const;
 	std::string visibility(Declaration::Visibility const& _visibility);
 	std::string type(Expression const& _expression);

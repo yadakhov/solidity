@@ -40,6 +40,21 @@ void ASTJsonConverter::addJsonNode(
 	bool _hasChildren = false
 )
 {
+	ASTJsonConverter::addJsonNode(
+		_node,
+		_nodeName,
+		std::vector<pair<string const, Json::Value const>>(_attributes),
+		_hasChildren
+	);
+}
+  
+void ASTJsonConverter::addJsonNode(
+	ASTNode const& _node,
+	string const& _nodeName,
+	std::vector<pair<string const, Json::Value const>> const& _attributes,
+	bool _hasChildren = false
+)
+{
 	Json::Value node;
 
 	node["id"] = Json::UInt64(_node.id());
