@@ -160,18 +160,31 @@ bool ASTJsonConverter::visit(ContractDefinition const& _node)
 	Json::Value linearizedBaseContracts(Json::arrayValue);
 	for (auto const& baseContract: _node.annotation().linearizedBaseContracts)
 		linearizedBaseContracts.append(Json::UInt64(baseContract->id()));
+	Json::Value contractDependencies(Json::arrayValue);
+	for (auto const& dependentContract: _node.annotation().contractDependencies)
+		contractDependencies.append(Json::UInt64(dependentContract->id()));
 	addJsonNode(_node, "ContractDefinition", {
 		make_pair("name", _node.name()),
 		make_pair("isLibrary", _node.isLibrary()),
 		make_pair("fullyImplemented", _node.annotation().isFullyImplemented),
 		make_pair("linearizedBaseContracts", linearizedBaseContracts),
+		make_pair("contractDependencies", contractDependencies)
 	}, true);
 	return true;
 }
 
 bool ASTJsonConverter::visit(InheritanceSpecifier const& _node)
 {
-	addJsonNode(_node, "InheritanceSpecifier", {}, true);
+  //Json::Value arguments(Json::arrayValue); 
+  //for (auto const& arg: _node.arguments())
+  // arguments is a list of astpointer to expressions
+  // in visit(newExpressions) these are added as  
+  //arguments.append(arg.annotation().type);
+	addJsonNode(_node, "InheritanceSpecifier", {
+            //make_pair("basename", _node.name())
+                    //throws error that name()is implicitly deleted because the default definition would be ill-formed:
+                    //class UserDefinedTypeName: public TypeName
+	}, true);
 	return true;
 }
 
