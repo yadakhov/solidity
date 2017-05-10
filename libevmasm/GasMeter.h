@@ -46,8 +46,8 @@ namespace GasCosts
 	static unsigned const tier7Gas = 0;
 	static unsigned const expGas = 10;
 	static unsigned const expByteGas = 10;
-	static unsigned const sha3Gas = 30;
-	static unsigned const sha3WordGas = 6;
+	static unsigned const keccak256Gas = 30;
+	static unsigned const keccak256WordGas = 6;
 	static unsigned const sloadGas = 50;
 	static unsigned const sstoreSetGas = 20000;
 	static unsigned const sstoreResetGas = 5000;
