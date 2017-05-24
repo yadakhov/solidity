@@ -12,6 +12,7 @@ Features:
  * Inline Assembly: function definitions and function calls.
 
 Bugfixes:
+ * Code generator: Use ``REVERT`` instead of ``INVALID`` for generated input validation routines.
  * Type Checker: Make UTF8-validation a bit more sloppy to include more valid sequences.
  * Fixed crash concerning non-callable types.
  * Unused variable warnings no longer issued for variables used inside inline assembly.
