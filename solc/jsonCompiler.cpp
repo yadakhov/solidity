@@ -210,30 +210,6 @@ string compile(StringMap const& _sources, bool _optimize, CStyleReadFileCallback
 
 		try
 		{
-			// Do not taint the internal error list
-			ErrorList formalErrors;
-			ErrorReporter errorReporter(formalErrors);
-			if (compiler.prepareFormalAnalysis(&errorReporter))
-				output["formal"]["why3"] = compiler.formalTranslation();
-			if (!errorReporter.errors().empty())
-			{
-				Json::Value errors(Json::arrayValue);
-				for (auto const& error: errorReporter.errors())
-					errors.append(SourceReferenceFormatter::formatExceptionInformation(
-						*error,
-						(error->type() == Error::Type::Warning) ? "Warning" : "Error",
-						scannerFromSourceName
-					));
-				output["formal"]["errors"] = errors;
-			}
-		}
-		catch (...)
-		{
-			output["errors"].append("Unknown exception while generating formal method output.");
-		}
-
-		try
-		{
 			// Indices into this array are used to abbreviate source names in source locations.
 			output["sourceList"] = Json::Value(Json::arrayValue);
 			for (auto const& source: compiler.sourceNames())
