@@ -194,6 +194,7 @@ void CompilerUtils::encodeToMemory(
 	for (size_t i = 0; i < _givenTypes.size(); ++i)
 	{
 		TypePointer targetType = targetTypes[i];
+		// TODO just also loop through the struct members here.
 		solAssert(!!targetType, "Externalable type expected.");
 		if (targetType->isDynamicallySized() && !_copyDynamicDataInPlace)
 		{
