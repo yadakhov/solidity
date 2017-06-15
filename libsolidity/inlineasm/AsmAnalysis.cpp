@@ -462,4 +462,19 @@ void AsmAnalyzer::warnOnFutureInstruction(solidity::Instruction _instr, SourceLo
 			+ "\" instruction is only available after " +
 			"the Metropolis hard fork. Before that it acts as an invalid instruction."
 		);
+
+	static set<solidity::Instruction> experimentalInstructions{
+		solidity::Instruction::SHL,
+		solidity::Instruction::SHR,
+		solidity::Instruction::SAR,
+		solidity::Instruction::ROL,
+		solidity::Instruction::ROR
+	};
+	if (experimentalInstructions.count(_instr))
+		m_errorReporter.warning(
+			_location,
+			"The \"" +
+			boost::to_lower_copy(instructionInfo(_instr).name)
+			+ "\" instruction is experimental and not available in regular clients. "
+		);
 }
