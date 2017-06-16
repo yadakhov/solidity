@@ -10,9 +10,10 @@ Features:
  * Inline Assembly: introduce ``keccak256`` as an opcode. ``sha3`` is still a valid alias.
  * Inline Assembly: ``for`` and ``switch`` statements.
  * Inline Assembly: function definitions and function calls.
+ * Type Checker: Enforce strict UTF-8 validation.
 
 Bugfixes:
- * Type Checker: Make UTF8-validation a bit more sloppy to include more valid sequences.
+ * Type Checker: Support valid, but incorrectly rejected UTF-8 sequences.
  * Fixed crash concerning non-callable types.
  * Unused variable warnings no longer issued for variables used inside inline assembly.
  * Inline Assembly: Enforce function arguments when parsing functional instructions.
