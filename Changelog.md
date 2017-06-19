@@ -1,5 +1,4 @@
-
-	### 0.4.12 (unreleased)
+### 0.4.12 (unreleased)
 
 Features:
  * Assembler: renamed ``SHA3`` to `KECCAK256``.
