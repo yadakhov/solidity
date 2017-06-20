@@ -180,6 +180,12 @@ void CompilerUtils::encodeToMemory(
 		t = t->mobileType()->interfaceType(_encodeAsLibraryTypes)->encodingType();
 	}
 
+	if (_padToWordBoundaries && !_copyDynamicDataInPlace)
+	{
+		abiEncode(_givenTypes, _targetTypes, _encodeAsLibraryTypes);
+		return;
+	}
+
 	// Stack during operation:
 	// <v1> <v2> ... <vn> <mem_start> <dyn_head_1> ... <dyn_head_r> <end_of_mem>
 	// The values dyn_head_i are added during the first loop and they point to the head part
@@ -194,7 +200,6 @@ void CompilerUtils::encodeToMemory(
 	for (size_t i = 0; i < _givenTypes.size(); ++i)
 	{
 		TypePointer targetType = targetTypes[i];
-		// TODO just also loop through the struct members here.
 		solAssert(!!targetType, "Externalable type expected.");
 		if (targetType->isDynamicallySized() && !_copyDynamicDataInPlace)
 		{
@@ -285,6 +290,64 @@ void CompilerUtils::encodeToMemory(
 	// remove unneeded stack elements (and retain memory pointer)
 	m_context << swapInstruction(argSize + dynPointers + 1);
 	popStackSlots(argSize + dynPointers + 1);
+}
+
+void CompilerUtils::abiEncode(
+	TypePointers const& _givenTypes,
+	TypePointers const& _targetTypes,
+	bool _encodeAsLibraryTypes
+)
+{
+	// stack: <v1> <v2> ... <vn> <memFree>
+
+	map<string, pair<TypePointer, TypePointer>> requestedEncodingFunctions;
+
+	size_t headSize = 0;
+	for (auto const& t: _targetTypes)
+	{
+		solAssert(t->calldataEncodedSize() > 0, "");
+		headSize += t->calldataEncodedSize();
+	}
+	string mainRoutine = "let dynFree := add(headStart, " + to_string(headSize) + ")";
+	size_t headPos = 0;
+	for (size_t i = 0; i < _givenTypes.size(); ++i)
+	{
+		solUnimplementedAssert(_givenTypes[i]->sizeOnStack() == 1, "");
+		string encodingFunctionName =
+				"encode_" +
+				_givenTypes[i]->identifier() +
+				"_TO_" +
+				_targetTypes[i]->identifier();
+		mainRoutine +=
+			"dynFree := " +
+			encodingFunctionName +
+			"(value" +
+			to_string(i) +
+			", " +
+			"add(headStart, " +
+			to_string(headPos) +
+			"), dynFree)";
+		headPos += _targetTypes[i]->calldataEncodedSize();
+		requestedEncodingFunctions[encodingFunctionName].first = _givenTypes[i];
+		requestedEncodingFunctions[encodingFunctionName].second = _targetTypes[i];
+	}
+	solAssert(headPos == headSize, "");
+	mainRoutine += "v0 := dynFree";
+
+	vector<string> variables;
+	for (size_t i = 0; i < _givenTypes.size(); ++i)
+		variables.push_back("value" + to_string(i));
+	variables.push_back("headStart");
+
+	for (auto const& f: requestedEncodingFunctions)
+	{
+		// function(value, headStart, headPos, dynFree) -> (dynFreeNew)
+
+		mainRoutine += "function " + f.first + "(value, headStart, headPos, dynFree) -> newDynFree {";
+		mainRoutine += "}";
+	}
+
+	m_context.appendInlineAssembly(mainRoutine, variables);
 }
 
 void CompilerUtils::zeroInitialiseMemoryArray(ArrayType const& _type)

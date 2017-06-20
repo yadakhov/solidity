@@ -103,6 +103,12 @@ public:
 		bool _encodeAsLibraryTypes = false
 	);
 
+	void abiEncode(
+		TypePointers const& _givenTypes,
+		TypePointers const& _targetTypes,
+		bool _encodeAsLibraryTypes = false
+	);
+
 	/// Zero-initialises (the data part of) an already allocated memory array.
 	/// Length has to be nonzero!
 	/// Stack pre: <length> <memptr>
