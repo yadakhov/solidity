@@ -26,6 +26,8 @@
 #include <libsolidity/codegen/ArrayUtils.h>
 #include <libsolidity/codegen/LValue.h>
 
+#include <libdevcore/MiniMoustache.h>
+
 using namespace std;
 
 namespace dev
@@ -295,13 +297,29 @@ void CompilerUtils::encodeToMemory(
 void CompilerUtils::abiEncode(
 	TypePointers const& _givenTypes,
 	TypePointers const& _targetTypes,
-	bool _encodeAsLibraryTypes
+	bool /*_encodeAsLibraryTypes*/
 )
 {
 	// stack: <v1> <v2> ... <vn> <memFree>
 
 	map<string, pair<TypePointer, TypePointer>> requestedEncodingFunctions;
 
+	string encoder = R"(
+		let dynFree := add($headStart, <headSize>)
+		<#values>
+			dynFree := encode_<fromTypeID>_TO_<toTypeID>(
+				$value<i>,
+				add($headStart, <headPos>),
+				dynFree
+			)
+		</values>
+		<#encodingFunctions>
+			function <name>(value, headStart, headPos, dyn) -> newDyn {
+				<body>
+			}
+		</encodingFunctions>
+		$value0 := dynFree
+	)";
 	size_t headSize = 0;
 	for (auto const& t: _targetTypes)
 	{
