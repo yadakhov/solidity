@@ -297,75 +297,120 @@ void CompilerUtils::encodeToMemory(
 void CompilerUtils::abiEncode(
 	TypePointers const& _givenTypes,
 	TypePointers const& _targetTypes,
-	bool /*_encodeAsLibraryTypes*/
+	bool _encodeAsLibraryTypes
 )
 {
-	// stack: <v1> <v2> ... <vn> <memFree>
-
-	map<string, pair<TypePointer, TypePointer>> requestedEncodingFunctions;
+	// stack: <$value0> <$value1> ... <$value(n-1)> <$headStart>
 
 	string encoder = R"(
 		let dynFree := add($headStart, <headSize>)
 		<#values>
-			dynFree := encode_<fromTypeID>_TO_<toTypeID>(
+			dynFree := encode_<fromTypeID>_to_<toTypeID>(
 				$value<i>,
+				$headStart,
 				add($headStart, <headPos>),
 				dynFree
 			)
 		</values>
-		<#encodingFunctions>
-			function <name>(value, headStart, headPos, dyn) -> newDyn {
-				<body>
-			}
-		</encodingFunctions>
+		<#encodingFunctions><function></encodingFunctions>
 		$value0 := dynFree
 	)";
+	solAssert(!_givenTypes.empty(), "");
 	size_t headSize = 0;
 	for (auto const& t: _targetTypes)
 	{
 		solAssert(t->calldataEncodedSize() > 0, "");
 		headSize += t->calldataEncodedSize();
 	}
-	string mainRoutine = "let dynFree := add(headStart, " + to_string(headSize) + ")";
-	size_t headPos = 0;
+	MiniMoustache m(encoder);
+	m("headSize", to_string(headSize));
+	vector<MiniMoustache::StringMap> values(_givenTypes.size());
+	map<string, pair<TypePointer, TypePointer>> requestedEncodingFunctions;
 	for (size_t i = 0; i < _givenTypes.size(); ++i)
 	{
 		solUnimplementedAssert(_givenTypes[i]->sizeOnStack() == 1, "");
-		string encodingFunctionName =
-				"encode_" +
-				_givenTypes[i]->identifier() +
-				"_TO_" +
-				_targetTypes[i]->identifier();
-		mainRoutine +=
-			"dynFree := " +
-			encodingFunctionName +
-			"(value" +
-			to_string(i) +
-			", " +
-			"add(headStart, " +
-			to_string(headPos) +
-			"), dynFree)";
+		values[i]["fromTypeID"] = _givenTypes[i]->identifier();
+		values[i]["toTypeID"] = _targetTypes[i]->identifier();
+		values[i]["i"] = to_string(i);
+		values[i]["headPos"] = to_string(headPos);
 		headPos += _targetTypes[i]->calldataEncodedSize();
+		string encodingFuctionName = _givenTypes[i]->identifier() + "_TO_" + _targetTypes[i]->identifier();
 		requestedEncodingFunctions[encodingFunctionName].first = _givenTypes[i];
 		requestedEncodingFunctions[encodingFunctionName].second = _targetTypes[i];
 	}
 	solAssert(headPos == headSize, "");
-	mainRoutine += "v0 := dynFree";
+	m("values", values);
 
 	vector<string> variables;
 	for (size_t i = 0; i < _givenTypes.size(); ++i)
-		variables.push_back("value" + to_string(i));
-	variables.push_back("headStart");
+		variables.push_back("$value" + to_string(i));
+	variables.push_back("$headStart");
 
+	vector<MiniMoustache::StringMap> encodingFunctions;
 	for (auto const& f: requestedEncodingFunctions)
 	{
-		// function(value, headStart, headPos, dynFree) -> (dynFreeNew)
-
-		mainRoutine += "function " + f.first + "(value, headStart, headPos, dynFree) -> newDynFree {";
-		mainRoutine += "}";
+		encodingFunctions.push_back(MiniMoustache::StringMap);
+		encodingFunctions.back()["function"] =
+			abiEncodingFunction(f.second.first, f.second.second, _encodeAsLibraryTypes);
 	}
+	m("encodingFunctions", encodingFunctions);
 
-	m_context.appendInlineAssembly(mainRoutine, variables);
+	m_context.appendInlineAssembly(m.render(), variables);
+	popStackSlots(variables.size());
+}
+
+string CompilerUtils::abiEncodingFunction(
+	TypePointer const& _givenType,
+	TypePointer const& _targetType,
+	bool _encodeAsLibraryTypes
+)
+{
+	// Signature:
+	// function encode_<fromTypeID>_to_<toTypeID>(value, headStart, headPos, dyn) -> newDyn
+	string encoder = R"(
+		function encode_<fromTypeID>_to_<toTypeID>(value, headStart, headPos, dyn) -> newDyn {
+			<body>
+		}
+	)";
+	MiniMoustache m(encoder);
+	m("fromTypeID", _givenType->identifier());
+	m("toTypeID", _targetType->identifier());
+
+
+	if (_targetType->isDynamicallySized())
+	{
+
+	}
+	else
+	{
+		solUnimplementedAssert(_givenType->sizeOnStack() == 1, "");
+		solAssert(!!_targetType, "Externalable type expected.");
+		TypePointer type = targetType;
+		if (_givenType->dataStoredIn(DataLocation::Storage) && _targetType->isValueType())
+		{
+			// special case: convert storage reference type to value type - this is only
+			// possible for library calls where we just forward the storage reference
+			solAssert(_encodeAsLibraryTypes, "");
+			m("body", "mstore(headPos, value)");
+		}
+		else if (
+			_givenTypes[i]->dataStoredIn(DataLocation::Storage) ||
+			_givenTypes[i]->dataStoredIn(DataLocation::CallData) ||
+			_givenTypes[i]->category() == Type::Category::StringLiteral ||
+			_givenTypes[i]->category() == Type::Category::Function
+		)
+		{
+			// This used to delay conversion
+			solUnimplemented();
+		}
+		else
+			convertType(*_givenType, *targetType, true);
+		if (auto arrayType = dynamic_cast<ArrayType const*>(type.get()))
+			ArrayUtils(m_context).copyArrayToMemory(*arrayType, _padToWordBoundaries);
+		else
+			storeInMemoryDynamic(*type, _padToWordBoundaries);
+
+	}
 }
 
 void CompilerUtils::zeroInitialiseMemoryArray(ArrayType const& _type)
