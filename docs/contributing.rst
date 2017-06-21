@@ -74,3 +74,13 @@ To run a subset of tests, filters can be used:
 ``soltest -t TestSuite/TestName -- --ipcpath /tmp/testeth/geth.ipc``, where ``TestName`` can be a wildcard ``*``.
 
 Alternatively, there is a testing script at ``scripts/test.sh`` which executes all tests.
+
+Moustachio
+==========
+
+*Moustachio* is a templating system based on `Moustache <https://mustache.github.io>`_. It is used by the
+compiler in various places to aid readability, and thus maintainability, of the code.
+
+The syntax comes with a substantial difference to Moustache: the template markers ``{{`` and ``}}`` are
+replaced by ``<`` and ``>`` in order to aid parsing and avoid conflict with :ref:`inline-assembly`.
+Other limitation is that lists are only resolved one depth and they will not recurse. This may change in the future.
